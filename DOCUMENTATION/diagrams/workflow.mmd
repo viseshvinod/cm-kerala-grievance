@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> Submitted : citizen submits (reference ID generated, AI analysis stored)
+  Submitted --> UnderReview : CMO reviews / forwards to department
+  UnderReview --> UnderReview : CMO reassigns · officer returns to CMO
+  UnderReview --> InProgress : officer starts investigation
+  InProgress --> InProgress : progress updates · ATR submitted · CMO returns ATR
+  InProgress --> Resolved : CMO accepts action-taken report
+  UnderReview --> Resolved : CMO closes at CMO level
+  Resolved --> Reopened : citizen reopens (≤ 30 days)
+  Reopened --> UnderReview : CMO reviews / re-forwards
+  Resolved --> [*] : citizen feedback
+  state "Under Review" as UnderReview
+  state "In Progress" as InProgress

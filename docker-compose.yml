@@ -1,0 +1,16 @@
+# Local full stack: `docker compose up --build` → http://localhost:4000
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: cmk, POSTGRES_PASSWORD: cmk, POSTGRES_DB: cmk_grievance }
+    volumes: [pgdata:/var/lib/postgresql/data]
+  app:
+    build: .
+    depends_on: [db]
+    ports: ["4000:4000"]
+    environment:
+      DATABASE_URL: postgres://cmk:cmk@db:5432/cmk_grievance
+      JWT_SECRET: local-docker-secret-change-me-0123456789abcdef
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+volumes:
+  pgdata:

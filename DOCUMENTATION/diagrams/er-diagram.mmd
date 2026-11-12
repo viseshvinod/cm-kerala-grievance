@@ -1,0 +1,135 @@
+erDiagram
+  DEPARTMENTS ||--o{ USERS : "employs (officers)"
+  DEPARTMENTS ||--o{ GRIEVANCES : "currently handles"
+  DEPARTMENTS ||--o{ DEPARTMENT_ASSIGNMENTS : "receives"
+  USERS ||--o{ GRIEVANCES : "submits (citizen)"
+  USERS ||--o{ GRIEVANCE_HISTORY : "acts in"
+  USERS ||--o{ DEPARTMENT_ASSIGNMENTS : "assigns / investigates / reviews"
+  USERS ||--o{ REMARKS : "writes"
+  USERS ||--o{ ATTACHMENTS : "uploads"
+  USERS ||--o{ FEEDBACK : "gives"
+  USERS ||--o{ AI_ANALYSES : "requests"
+  GRIEVANCES ||--|{ GRIEVANCE_HISTORY : "audit trail"
+  GRIEVANCES ||--o{ DEPARTMENT_ASSIGNMENTS : "routed via"
+  GRIEVANCES ||--o{ ATTACHMENTS : "has"
+  GRIEVANCES ||--o{ REMARKS : "has"
+  GRIEVANCES ||--o| FEEDBACK : "rated by"
+  GRIEVANCES ||--o{ AI_ANALYSES : "analysed by"
+  ATTACHMENTS |o--o| DEPARTMENT_ASSIGNMENTS : "ATR document"
+
+  USERS {
+    serial id PK
+    varchar name
+    varchar email UK "case-insensitive"
+    varchar mobile
+    varchar password_hash "bcrypt"
+    enum role "citizen | cmo_admin | dept_officer"
+    int department_id FK "officers only"
+    varchar designation
+    bool is_active
+    timestamptz created_at
+  }
+  DEPARTMENTS {
+    serial id PK
+    varchar code UK
+    varchar name
+    text description
+    text_array categories
+    int sla_days
+    bool is_featured
+  }
+  GRIEVANCES {
+    serial id PK
+    varchar reference_no UK "CMK-YY-DIS-XXXXXX"
+    int citizen_id FK
+    varchar district
+    varchar category
+    varchar subject
+    text description
+    enum priority "Low | Medium | High"
+    enum status "Submitted | Under Review | In Progress | Resolved | Reopened"
+    int department_id FK
+    bool is_escalated
+    timestamptz due_date
+    timestamptz resolved_at
+    int reopen_count
+    int ai_analysis_id FK
+    text ai_summary
+    varchar ai_suggested_category
+    enum ai_suggested_priority
+    int ai_suggested_department_id FK
+  }
+  GRIEVANCE_HISTORY {
+    serial id PK
+    int grievance_id FK
+    varchar action
+    enum from_status
+    enum to_status
+    text remarks
+    bool is_public
+    int actor_id FK
+    enum actor_role
+    timestamptz created_at
+  }
+  DEPARTMENT_ASSIGNMENTS {
+    serial id PK
+    int grievance_id FK
+    int department_id FK
+    int officer_id FK
+    int assigned_by FK
+    text instructions
+    bool is_current "one current per grievance"
+    timestamptz due_date
+    text atr_text
+    int atr_attachment_id FK
+    timestamptz atr_submitted_at
+    varchar review_status "awaiting_atr | pending_review | accepted | returned | withdrawn"
+    int reviewed_by FK
+    text review_remarks
+  }
+  ATTACHMENTS {
+    serial id PK
+    int grievance_id FK
+    int uploaded_by FK
+    varchar kind "evidence | atr"
+    varchar original_name
+    varchar mime_type
+    int size_bytes
+    char sha256
+    bytea data
+  }
+  REMARKS {
+    serial id PK
+    int grievance_id FK
+    int author_id FK
+    varchar visibility "internal | public"
+    text body
+  }
+  FEEDBACK {
+    serial id PK
+    int grievance_id FK,UK
+    int citizen_id FK
+    smallint rating "1-5"
+    text comments
+  }
+  CONTACT_ENQUIRIES {
+    serial id PK
+    varchar name
+    varchar email
+    varchar subject
+    text message
+    varchar status "new | read | closed"
+  }
+  AI_ANALYSES {
+    serial id PK
+    int requested_by FK
+    int grievance_id FK
+    char input_hash
+    varchar provider
+    varchar model
+    bool is_fallback
+    jsonb result
+    jsonb duplicates
+    int latency_ms
+    text error
+  }

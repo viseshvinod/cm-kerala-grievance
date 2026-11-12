@@ -1,0 +1,36 @@
+flowchart LR
+  subgraph Browser["Browser — React 18 SPA (Vite)"]
+    PUB["Public site<br/>Home · About · How it works<br/>Departments · FAQ · Contact · Track"]
+    CIT["Citizen portal<br/>Register/Login · Submit · Dashboard<br/>Feedback · Reopen"]
+    CMO["CMO dashboard<br/>KPIs & charts · Filters · Forward<br/>Escalate · ATR review · Remarks"]
+    OFF["Officer dashboard<br/>Assigned list · Investigate<br/>Progress updates · Submit ATR"]
+  end
+
+  subgraph API["Node.js 22 + Express 4 (single service)"]
+    MW["Middleware<br/>helmet CSP · rate limits · JWT cookie auth<br/>RBAC requireRole · zod validation"]
+    R1["/api/auth"]
+    R2["/api (public: meta, departments,<br/>stats, track, contact)"]
+    R3["/api/grievances<br/>(scoped by role)"]
+    R4["/api/admin<br/>(stats, officers, enquiries)"]
+    R5["/api/ai/analyze"]
+    WF["Workflow service<br/>state machine + audit history<br/>(transactions, row locks)"]
+    AIS["AI Assistant service<br/>prompt · JSON validation · retry/timeout<br/>labelled fallback"]
+    SIM["Duplicate detector<br/>TF-IDF cosine similarity"]
+    UP["Upload service<br/>multer · type + magic-byte check"]
+  end
+
+  DB[("PostgreSQL 16<br/>users · departments · grievances<br/>grievance_history · department_assignments<br/>attachments (bytea) · remarks · feedback<br/>contact_enquiries · ai_analyses")]
+  LLM["LLM provider (pluggable)<br/>Google Gemini · OpenAI-compatible (OpenAI/Groq)<br/>· Anthropic Claude"]
+
+  PUB & CIT & CMO & OFF -->|"HTTPS JSON / multipart<br/>httpOnly cookie"| MW
+  MW --> R1 & R2 & R3 & R4 & R5
+  R3 --> WF
+  R3 --> UP
+  R3 --> AIS
+  R5 --> AIS
+  AIS --> SIM
+  AIS -->|"REST, 20 s timeout"| LLM
+  WF --> DB
+  UP --> DB
+  AIS -->|"audit log"| DB
+  R1 & R2 & R4 --> DB
